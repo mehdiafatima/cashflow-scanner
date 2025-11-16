@@ -1,0 +1,3 @@
+date|source|amount_paisa|description
+2025-11-16|Salary|5000|September salary
+2025-11-16|Freelance|2000|Website design
