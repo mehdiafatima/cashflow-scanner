@@ -1,61 +1,71 @@
 from utils.helpers import load_data
-from datetime import datetime, timedelta
+from datetime import datetime
 import calendar
 
 INCOME_FILE = 'database/income.txt'
 EXPENSE_FILE = 'database/expenses.txt'
 
+
 def calculate_safe_balance(income_data, expense_data):
     """
-    Calculates the safe balance: Total Income - Total Fixed Expenses.
-    All amounts are expected to be in paisa/cents.
+    Safe Balance = Total Income - Fixed Expenses
+    Variable expenses are not subtracted here, because they are handled in daily burn.
+    All amounts in paisa/cents.
     """
     total_income = sum(int(inc['amount_paisa']) for inc in income_data)
-    total_fixed_expenses = sum(
-        int(exp['amount_paisa']) for exp in expense_data if exp['type'] == 'Fixed'
-    )
+    total_fixed_expenses = sum(int(exp['amount_paisa']) for exp in expense_data if exp['type'] == 'Fixed')
+
     return total_income - total_fixed_expenses
+
 
 def calculate_daily_burn(expense_data):
     """
-    Calculates the daily burn rate: Total Variable Expenses / Remaining Days in Month.
-    All amounts are expected to be in paisa/cents.
+    Daily burn = Total Variable Expenses / Remaining Days in Month
+    Only variable expenses are counted here.
     """
     total_variable_expenses = sum(
-        int(exp['amount_paisa']) for exp in expense_data if exp['type'] == 'Variable'
+        int(exp['amount_paisa'])
+        for exp in expense_data
+        if exp['type'] == 'Variable'
     )
 
     today = datetime.now()
     days_in_month = calendar.monthrange(today.year, today.month)[1]
-    remaining_days = days_in_month - today.day + 1 # Include today
+    remaining_days = days_in_month - today.day + 1  # include today
 
     if remaining_days <= 0:
-        return total_variable_expenses # Or handle as an error/edge case
+        return total_variable_expenses
 
     return total_variable_expenses / remaining_days
 
+
 def predict_remaining_days(safe_balance, daily_burn_rate):
     """
-    Predicts how many days the safe balance will last given the daily burn rate.
+    Predicts how many days your remaining safe balance can sustain your daily burn.
     """
     if daily_burn_rate <= 0:
-        return float('inf') if safe_balance >= 0 else float('-inf') # Handle zero or negative burn rate
+        if safe_balance >= 0:
+            return float('inf')
+        return float('-inf')
+
     return safe_balance / daily_burn_rate
+
 
 def determine_stress_level(remaining_days):
     """
-    Determines the cashflow stress level based on the number of remaining days.
+    Cashflow stress evaluation.
     """
     if remaining_days >= 15:
         return "Low"
-    elif 7 <= remaining_days < 15:
+    elif remaining_days >= 7:
         return "Medium"
     else:
         return "High"
 
+
 def get_analytics_summary():
     """
-    Orchestrates the calculation of all analytics metrics and returns a summary.
+    Pipeline to calculate all analytics and return summary.
     """
     income_data = load_data(INCOME_FILE)
     expense_data = load_data(EXPENSE_FILE)
@@ -71,4 +81,3 @@ def get_analytics_summary():
         'remaining_days': remaining_days,
         'stress_level': stress_level
     }
-

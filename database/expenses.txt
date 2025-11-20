@@ -1,3 +1,3 @@
 date|type|category|amount_paisa|description|frequency
-2025-11-16|Fixed|Rent|1500|Apartment rent|monthly
-2025-11-16|Variable|Shopping|300|Shopping|one-time
+2025-11-20|Fixed|Rent|25000|Office Rent |monthly
+2025-11-20|Variable|Food|3000||one-time
