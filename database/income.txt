@@ -1,2 +1,2 @@
-date|source|amount_paisa|description
-2025-11-20|Salary|200000|Salary
+date|source|amount|description
+2025-11-21|Salary|200000.0|Salary

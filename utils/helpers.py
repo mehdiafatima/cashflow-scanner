@@ -5,7 +5,6 @@ from datetime import datetime
 def load_data(file_path):
     """
     Loads data from a CSV file.
-    Assumes the first row is the header.
     Returns a list of dictionaries, where each dictionary represents a row.
     """
     data = []
@@ -20,11 +19,10 @@ def load_data(file_path):
 
 def save_data(file_path, data):
     """
-    Saves data (list of dictionaries) to a CSV file.
+    Saves a list of dictionaries to a CSV file.
     The keys of the first dictionary are used as the header.
     """
     if not data:
-        # If data is empty, create an empty file or clear existing content
         with open(file_path, 'w', newline='', encoding='utf-8') as f:
             pass
         return
@@ -37,11 +35,11 @@ def save_data(file_path, data):
 
 def validate_amount(amount_str):
     """
-    Validates if a string represents a positive integer amount (in paisa/cents).
-    Returns the integer amount if valid, otherwise None.
+    Validates if a string represents a positive number (float allowed, in Rupees).
+    Returns the float amount if valid, otherwise None.
     """
     try:
-        amount = int(amount_str)
+        amount = float(amount_str)
         if amount > 0:
             return amount
     except ValueError:
