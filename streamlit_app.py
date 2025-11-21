@@ -4,11 +4,21 @@ import pandas as pd
 import time
 import plotly.express as px
 import plotly.graph_objects as go
+import json
+from pathlib import Path
 
 from utils.helpers import load_data, save_data, validate_amount
 from features.input.income_input import INCOME_FILE, INCOME_SOURCES
 from features.expenses.expense_input import EXPENSE_FILE, FIXED_EXPENSE_CATEGORIES, VARIABLE_EXPENSE_CATEGORIES, EXPENSE_FREQUENCIES
 from features.analytics.cashflow_analysis import get_analytics_summary
+
+# --- Initialize database files if missing ---
+for file_path in [INCOME_FILE, EXPENSE_FILE]:
+    path = Path(file_path)
+    if not path.exists():
+        path.parent.mkdir(exist_ok=True)
+        with open(path, 'w') as f:
+            json.dump([], f)
 
 # --- Page Configuration ---
 st.set_page_config(layout="wide", page_title="Cashflow Stress Scanner", page_icon="💰")
@@ -20,11 +30,13 @@ st.markdown("Predict cash shortages before they happen. Analyze your income and 
 # --- Helper Functions ---
 @st.cache_data
 def get_income_data():
-    return load_data(INCOME_FILE)
+    data = load_data(INCOME_FILE)
+    return data if data else []
 
 @st.cache_data
 def get_expense_data():
-    return load_data(EXPENSE_FILE)
+    data = load_data(EXPENSE_FILE)
+    return data if data else []
 
 def refresh_data():
     st.cache_data.clear()
@@ -50,8 +62,6 @@ with tab1:
         submitted = st.form_submit_button("Add Income")
         if submitted:
             amount = validate_amount(income_amount_str)
-            with st.spinner("Adding income..."):
-                time.sleep(0.5)
             if amount is not None:
                 income_entry = {
                     'date': income_date.strftime('%Y-%m-%d'),
@@ -68,12 +78,14 @@ with tab1:
                 st.error("Invalid amount. Please enter a positive number.")
 
     st.subheader("Current Income Entries")
-    incomes_df = pd.DataFrame(get_income_data())
-    if not incomes_df.empty:
+    incomes = get_income_data()
+    if incomes:
+        incomes_df = pd.DataFrame(incomes)
+        if 'amount' not in incomes_df.columns:
+            incomes_df['amount'] = 0.0
         incomes_df['Amount'] = incomes_df['amount'].astype(float)
         st.dataframe(incomes_df[['date', 'source', 'Amount', 'description']].sort_values(by='date', ascending=False))
-        total_income = incomes_df['Amount'].sum()
-        st.metric("Total Income", f"₹{total_income:,.2f}", delta="💵")
+        st.metric("Total Income", f"₹{incomes_df['Amount'].sum():,.2f}", delta="💵")
     else:
         st.info("No income entries yet.")
 
@@ -149,11 +161,15 @@ with tab2:
                 st.error("Invalid amount. Please enter a positive number.")
 
     st.subheader("Current Expense Entries")
-    expenses_df = pd.DataFrame(get_expense_data())
-    if not expenses_df.empty:
+    expenses = get_expense_data()
+    if expenses:
+        expenses_df = pd.DataFrame(expenses)
+        if 'amount' not in expenses_df.columns:
+            expenses_df['amount'] = 0.0
         expenses_df['Amount'] = expenses_df['amount'].astype(float)
         st.dataframe(expenses_df[['date', 'type', 'category', 'Amount', 'description', 'frequency']].sort_values(by='date', ascending=False))
     else:
+        expenses_df = pd.DataFrame(columns=['date','type','category','amount','description','frequency'])
         st.info("No expense entries yet.")
 
 # -----------------------------
