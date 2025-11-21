@@ -27,17 +27,14 @@ st.set_page_config(layout="wide", page_title="Cashflow Stress Scanner", page_ico
 st.title("💰 Cashflow Stress Scanner")
 st.markdown("Predict cash shortages before they happen. Analyze your income and expenses.")
 
+# --- Session-State Initialization ---
+if 'incomes' not in st.session_state:
+    st.session_state['incomes'] = load_data(INCOME_FILE) or []
+
+if 'expenses' not in st.session_state:
+    st.session_state['expenses'] = load_data(EXPENSE_FILE) or []
+
 # --- Helper Functions ---
-@st.cache_data
-def get_income_data():
-    data = load_data(INCOME_FILE)
-    return data if data else []
-
-@st.cache_data
-def get_expense_data():
-    data = load_data(EXPENSE_FILE)
-    return data if data else []
-
 def refresh_data():
     st.cache_data.clear()
 
@@ -69,16 +66,16 @@ with tab1:
                     'amount': float(amount),
                     'description': income_description if income_description else ''
                 }
-                incomes = get_income_data()
-                incomes.append(income_entry)
-                save_data(INCOME_FILE, incomes)
+                st.session_state['incomes'].append(income_entry)
+                # Optionally persist globally
+                save_data(INCOME_FILE, st.session_state['incomes'])
                 refresh_data()
                 st.success("Income added successfully! ✅")
             else:
                 st.error("Invalid amount. Please enter a positive number.")
 
     st.subheader("Current Income Entries")
-    incomes = get_income_data()
+    incomes = st.session_state['incomes']
     if incomes:
         incomes_df = pd.DataFrame(incomes)
         if 'amount' not in incomes_df.columns:
@@ -119,9 +116,8 @@ with tab2:
                     'description': fixed_expense_description if fixed_expense_description else '',
                     'frequency': fixed_expense_frequency
                 }
-                expenses = get_expense_data()
-                expenses.append(expense_entry)
-                save_data(EXPENSE_FILE, expenses)
+                st.session_state['expenses'].append(expense_entry)
+                save_data(EXPENSE_FILE, st.session_state['expenses'])
                 refresh_data()
                 st.success("Fixed expense added successfully! ✅")
             else:
@@ -152,16 +148,15 @@ with tab2:
                     'description': variable_expense_description if variable_expense_description else '',
                     'frequency': 'one-time'
                 }
-                expenses = get_expense_data()
-                expenses.append(expense_entry)
-                save_data(EXPENSE_FILE, expenses)
+                st.session_state['expenses'].append(expense_entry)
+                save_data(EXPENSE_FILE, st.session_state['expenses'])
                 refresh_data()
                 st.success("Variable expense added successfully! ✅")
             else:
                 st.error("Invalid amount. Please enter a positive number.")
 
     st.subheader("Current Expense Entries")
-    expenses = get_expense_data()
+    expenses = st.session_state['expenses']
     if expenses:
         expenses_df = pd.DataFrame(expenses)
         if 'amount' not in expenses_df.columns:
@@ -177,7 +172,7 @@ with tab2:
 # -----------------------------
 with tab3:
     st.header("Cashflow Analytics")
-    summary = get_analytics_summary()
+    summary = get_analytics_summary(session_incomes=st.session_state['incomes'], session_expenses=st.session_state['expenses'])
 
     st.subheader("Monthly Summary (All amounts in ₹)")
     st.write(f"**Total Income:** ₹{summary.get('total_income', 0):,.2f}")
