@@ -1,3 +1,0 @@
-date|type|category|amount|description|frequency
-2025-11-21|Fixed|Rent|2000.0|Office Rent|monthly
-2025-11-21|Variable|Food|500.0|Food|one-time

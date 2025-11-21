@@ -1,2 +1,0 @@
-date|source|amount|description
-2025-11-21|Salary|200000.0|Salary
